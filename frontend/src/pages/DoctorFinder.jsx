@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Stethoscope, ShieldCheck, Filter, ExternalLink, Briefcase, MapPin, BadgeIndianRupee, GraduationCap, Clock, Star, StarHalf, StarOff } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// --- StarRating Component (Included in this file to prevent import errors) ---
-const StarRating = ({ rating }) => {
+// --- StarRating Component (No changes needed here) ---
+const StarRating = ({ rating, reviewsCount }) => {
   const numericRating = parseFloat(rating) || 0;
   const fullStars = Math.floor(numericRating);
   const halfStar = numericRating % 1 >= 0.5;
@@ -29,13 +29,13 @@ const StarRating = ({ rating }) => {
         <Star key={`empty-${i}`} size={16} className="text-gray-300 fill-current" />
       ))}
       <span className="ml-2 text-sm font-medium text-black/70">{numericRating.toFixed(1)}</span>
+      {reviewsCount > 0 && <span className="ml-2 text-xs text-gray-500">({reviewsCount} reviews)</span>}
     </div>
   );
 };
 
-// --- DoctorCard Component (Included in this file to prevent import errors) ---
+// --- DoctorCard Component (FIX APPLIED HERE) ---
 const DoctorCard = ({ doctor, index }) => {
-  // --- FIX: Correctly access and format all complex and varying data fields ---
   const doctorName = doctor.doctorName || doctor.name || 'N/A';
   const speciality = doctor.speciality || doctor.specialization || 'Specialist';
   const clinicName = doctor.clinicName || (doctor.practice && doctor.practice.name) || 'Clinic details not available';
@@ -45,6 +45,8 @@ const DoctorCard = ({ doctor, index }) => {
     : 'N/A';
   const address = doctor.address || (doctor.practice && doctor.practice.address && doctor.practice.address.locality) || doctor.location || 'Location not specified';
   const websiteUrl = doctor.website || doctor.profileUrl;
+  const ratingValue = doctor.ratings ? (doctor.ratings.recommendationPercent / 100) * 5 : 0;
+  const reviewsCount = doctor.ratings ? doctor.ratings.reviewsCount : 0;
 
   return (
     <motion.div
@@ -55,6 +57,14 @@ const DoctorCard = ({ doctor, index }) => {
       transition={{ duration: 0.4, delay: index * 0.05, type: "spring", stiffness: 120 }}
       className="glass-card p-6 flex flex-col text-left space-y-4 hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300"
     >
+      <div className="flex-shrink-0 w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-blue-200 shadow-md">
+        <img
+          className="w-full h-full object-cover object-center"
+          src={doctor.imageUrl || 'https://via.placeholder.com/150'} // Fallback for missing images
+          alt={`Dr. ${doctorName}`}
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/150'; }} // Fallback on error
+        />
+      </div>
       <div>
         <h3 className="text-2xl font-bold text-black">{doctorName}</h3>
         <p className="text-blue-600 font-semibold">{speciality}</p>
@@ -64,10 +74,9 @@ const DoctorCard = ({ doctor, index }) => {
         <p className="flex items-start"><GraduationCap size={16} className="mr-3 mt-0.5 flex-shrink-0 text-black/50" /><span>{qualifications}</span></p>
         <p className="flex items-start"><MapPin size={16} className="mr-3 mt-0.5 flex-shrink-0 text-black/50" /><span><strong>{clinicName}</strong>, {address}</span></p>
         <p className="flex items-center"><BadgeIndianRupee size={16} className="mr-3 flex-shrink-0 text-black/50" /><span>₹{consultationFee} Consultation Fee</span></p>
-        <p className="flex items-center"><Clock size={16} className="mr-3 flex-shrink-0 text-black/50" /><span>{doctor.timings}</span></p>
       </div>
       <div className="pt-2">
-        <StarRating rating={doctor.rating} />
+        <StarRating rating={ratingValue} reviewsCount={reviewsCount} />
       </div>
       <div className="flex-grow"></div>
       {websiteUrl && (
@@ -79,7 +88,7 @@ const DoctorCard = ({ doctor, index }) => {
   );
 };
 
-// --- Main DoctorFinder Component ---
+// --- Main DoctorFinder Component (No changes needed here) ---
 const DoctorFinder = () => {
   const [allDoctors, setAllDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
@@ -137,7 +146,6 @@ const DoctorFinder = () => {
   }, [selectedSpecialty, selectedService, allDoctors]);
 
   return (
-    // --- FIX: Added responsive padding to prevent overlap on mobile ---
     <div className="min-h-screen px-4 pt-24 sm:px-6 md:px-8">
       <div className="wave"></div>
       <div className="wave"></div>
@@ -147,7 +155,6 @@ const DoctorFinder = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          // --- FIX: Increased bottom margin for more space ---
           className="text-center mb-10 md:mb-12"
         >
           <Filter className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-black/80" />
@@ -159,14 +166,14 @@ const DoctorFinder = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="relative">
               <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-black/50" />
-              <select value={selectedSpecialty} onChange={(e) => setSelectedSpecialty(e.target.value)} className="input pl-10 w-full" aria-label="Select a specialization">
+              <select value={selectedSpecialty} onChange={(e) => setSelectedSpecialty(e.target.value)} className="input pl-10 w-full" aria-label="Select a specialization" style={{ paddingLeft: '2.5rem' }}>
                 <option value="">Filter by Specialization</option>
                 {specializations.map(spec => <option key={spec} value={spec}>{spec}</option>)}
               </select>
             </div>
             <div className="relative">
               <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-black/50" />
-              <select value={selectedService} onChange={(e) => setSelectedService(e.target.value)} className="input pl-10 w-full" aria-label="Select a service" disabled={!availableServices.length}>
+              <select value={selectedService} onChange={(e) => setSelectedService(e.target.value)} className="input pl-10 w-full" aria-label="Select a service" disabled={!availableServices.length} style={{ paddingLeft: '2.5rem' }}>
                 <option value="">Filter by Service</option>
                 {availableServices.map(serv => <option key={serv} value={serv}>{serv}</option>)}
               </select>
